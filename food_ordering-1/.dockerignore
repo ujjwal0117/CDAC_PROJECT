@@ -1,0 +1,40 @@
+# Build artifacts
+target/
+*.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Maven wrapper (included in base image)
+.mvn/
+mvnw
+mvnw.cmd
+
+# SQL scripts (not needed in container)
+*.sql
+
+# Build logs
+build_log.txt
+build_package.log
+
+# PowerShell scripts
+*.ps1
+
+# Documentation
+*.md
+HELP.md
+README.md

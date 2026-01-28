@@ -1,0 +1,76 @@
+# Docker Compose for IRCTC Food Ordering Application
+# Usage: docker-compose up -d
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: irctc-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-irctc_food_db_1}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./food_ordering-1
+      dockerfile: Dockerfile
+    container_name: irctc-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DATABASE_URL=jdbc:mysql://mysql:3306/irctc_food_db_1?createDatabaseIfNotExist=true
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=${MYSQL_ROOT_PASSWORD:-password}
+      - JWT_SECRET=${JWT_SECRET:-irctcFoodOrderingServiceSecretKey2024ThisIsAVeryLongSecretKeyForHS256Algorithm}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_RpC0BqmwMSjqTT}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-0sThxGOwhu3I5wCZPFJY71CH}
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./raildine/raildine
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://localhost:8080}
+        - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_RpC0BqmwMSjqTT}
+    container_name: irctc-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://backend:8080}
+      - NEXT_PUBLIC_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_RpC0BqmwMSjqTT}
+
+volumes:
+  mysql_data:
+  uploads_data:
+
+# Network is automatically created by Docker Compose
