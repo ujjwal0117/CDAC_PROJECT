@@ -1,0 +1,16 @@
+# Non-code assets
+screenshots/
+uploads/
+*.pdf
+*.log
+RailMeal_Project_Report.md
+
+# IDE and System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
